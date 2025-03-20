@@ -5,19 +5,20 @@
 	import { cn } from '$lib/utils';
 	import type { ChatActions } from './types';
 	import { onMount } from 'svelte';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		inputValue = $bindable(),
 		isRecording = $bindable(),
+		isDisabled = $bindable(),
 		handleKeyDown,
-		handleSendMessage,
-		handleScheduleEvent
+		handleSendMessage
 	}: {
 		inputValue: string;
 		isRecording: boolean;
+		isDisabled: boolean;
 		handleSendMessage: ChatActions['handleSendMessage'];
 		handleKeyDown: ChatActions['handleKeyDown'];
-		handleScheduleEvent: () => Promise<void>;
 	} = $props();
 
 	let recognition: SpeechRecognition | null = null;
@@ -41,7 +42,8 @@
 			};
 
 			recognition.onerror = (event) => {
-				console.log('Speech recognition error:', event.error);
+				console.error('Speech recognition error:', event.error);
+				toast.error('Speech recognition error');
 			};
 		}
 	});
@@ -99,7 +101,7 @@
 					size="icon"
 					type="button"
 					onclick={handleSendMessage}
-					disabled={!inputValue.trim()}
+					disabled={!inputValue.trim() || isDisabled}
 					class="bg-primary hover:bg-primary/90 transition-colors duration-200 rounded-full"
 				>
 					<SendIcon class="h-5 w-5" />
@@ -111,7 +113,6 @@
 			<Button
 				variant="outline"
 				class="rounded-full hover:bg-primary/10 transition-colors duration-200"
-				onclick={handleScheduleEvent}
 			>
 				<CalendarIcon class="h-4 w-4 mr-2" />
 				Schedule Appointment

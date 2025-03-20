@@ -1,6 +1,6 @@
 import { db } from './db';
-import { chats, messages, type NewMessage } from './db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { chats, events, messages, type NewEvent, type NewMessage } from './db/schema';
+import { desc, eq, and, sql, between, gte, lt } from 'drizzle-orm';
 
 export async function getMessages(chatId: string) {
 	try {
@@ -24,7 +24,7 @@ export async function addMessage(message: NewMessage) {
 
 export async function createChat(userId: string) {
 	try {
-		const newChat = await db.insert(chats).values({ userId }).returning();
+		const [newChat] = await db.insert(chats).values({ userId }).returning();
 		return newChat;
 	} catch (error) {
 		console.error(error);
@@ -38,7 +38,23 @@ export async function getChats(userId: string) {
 			.select()
 			.from(chats)
 			.where(eq(chats.userId, userId))
-			.orderBy(desc(chats.lastUsed));
+			.orderBy(desc(chats.createdAt));
+		return allChats;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get chats');
+	}
+}
+
+export async function getChatsDates(userId: string) {
+	try {
+		const allChats = await db
+			.select({
+				date: chats.createdAt
+			})
+			.from(chats)
+			.where(eq(chats.userId, userId))
+			.orderBy(desc(chats.createdAt));
 		return allChats;
 	} catch (error) {
 		console.error(error);
@@ -92,5 +108,134 @@ export async function updateChatLastUsed(chatId: string) {
 	} catch (error) {
 		console.error(error);
 		throw new Error('Failed to update chat last used');
+	}
+}
+
+export async function getChatByDate(userId: string, date: Date) {
+	try {
+		const targetDate = date.toISOString().split('T')[0];
+		const [chat] = await db
+			.select()
+			.from(chats)
+			.where(and(eq(chats.userId, userId), sql`DATE(${chats.createdAt}) = ${targetDate}`));
+		return chat;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get chat by date');
+	}
+}
+
+export async function addEvent(event: NewEvent) {
+	try {
+		const newEvent = await db.insert(events).values(event).returning();
+		return newEvent;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to add event');
+	}
+}
+
+export async function getAllEvents(userId: string) {
+	try {
+		const allEvents = await db.select().from(events).where(eq(events.userId, userId));
+		return allEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get all events');
+	}
+}
+
+export async function getAllEventsDates(userId: string) {
+	try {
+		const allEventsDates = await db
+			.select({ date: events.date })
+			.from(events)
+			.where(eq(events.userId, userId));
+		return allEventsDates;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get all events dates');
+	}
+}
+
+export async function getTodaysEvents(userId: string) {
+	try {
+		const today = new Date();
+		const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+		const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+		const todaysEvents = await db
+			.select()
+			.from(events)
+			.where(and(eq(events.userId, userId), between(events.date, startOfDay, endOfDay)));
+		return todaysEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error("Failed to get today's events");
+	}
+}
+
+export async function getTodaysEventsDates(userId: string) {
+	try {
+		const today = new Date();
+		const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+		const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+		const todaysEvents = await db
+			.select({ date: events.date })
+			.from(events)
+			.where(and(eq(events.userId, userId), between(events.date, startOfDay, endOfDay)));
+		return todaysEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error("Failed to get today's events");
+	}
+}
+
+export async function getUpcomingEvents(userId: string) {
+	try {
+		const upcomingEvents = await db
+			.select()
+			.from(events)
+			.where(and(eq(events.userId, userId), gte(events.date, new Date())));
+		return upcomingEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get upcoming events');
+	}
+}
+export async function getUpcomingEventsDates(userId: string) {
+	try {
+		const upcomingEvents = await db
+			.select({ date: events.date })
+			.from(events)
+			.where(and(eq(events.userId, userId), gte(events.date, new Date())));
+		return upcomingEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get upcoming events');
+	}
+}
+
+export async function pastEvents(userId: string) {
+	try {
+		const pastEvents = await db
+			.select()
+			.from(events)
+			.where(and(eq(events.userId, userId), lt(events.date, new Date())));
+		return pastEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get past events');
+	}
+}
+export async function getPastEventsDates(userId: string) {
+	try {
+		const pastEvents = await db
+			.select({ date: events.date })
+			.from(events)
+			.where(and(eq(events.userId, userId), lt(events.date, new Date())));
+		return pastEvents;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Failed to get past events');
 	}
 }

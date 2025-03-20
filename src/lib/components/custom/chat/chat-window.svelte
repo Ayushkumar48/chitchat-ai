@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { Message, NewMessage } from '$lib/components/custom/chat/types';
+	import type { Message, NewMessage, DetectedData } from '$lib/components/custom/chat/types';
 	import { toast } from 'svelte-sonner';
 	import MessageList from '$lib/components/custom/chat/message-list.svelte';
 	import MessageInput from '$lib/components/custom/chat/message-input.svelte';
 	import nlp from 'compromise';
 	import datePlugin from 'compromise-dates';
+	import { convertTo12HourFormat } from '$lib';
 	nlp.plugin(datePlugin);
 
 	let messages = $state<Message[]>(
@@ -21,29 +22,17 @@
 	let isRecording = $state(false);
 	let isTyping = $state(false);
 	let failedMessage = $state<string | null>(null);
+	let isDisabled = $state(false);
 
 	async function handleSendMessage() {
-		if (!inputValue.trim()) return;
-
+		if (!inputValue.trim() || isDisabled) return;
+		isDisabled = true;
 		const currentInput = inputValue;
 		inputValue = '';
 		isTyping = true;
 
 		try {
 			let chatId = messages[0]?.chatId;
-			if (!chatId) {
-				const response = await fetch('/api/chat/chats', {
-					method: 'POST'
-				});
-				if (!response.ok) {
-					throw new Error('Failed to create chat');
-				}
-				const data = await response.json();
-				if (!data.success) {
-					throw new Error(data.error || 'Failed to create chat');
-				}
-				chatId = data.chat[0].id;
-			}
 
 			const userMessage: NewMessage = {
 				chatId,
@@ -61,37 +50,54 @@
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to send message');
+				toast.error('Failed to send message');
+				return;
 			}
 
 			const userMessageData = await response.json();
 			if (!userMessageData.success) {
-				throw new Error(userMessageData.error || 'Failed to send message');
+				toast.error(userMessageData.error || 'Failed to send message');
+				return;
 			}
 
+			const doc = nlp(currentInput);
+			// @ts-expect-error
+			const date = doc.dates().json()[0]?.dates?.start;
+			// @ts-expect-error
+			const time = doc.times().json()[0]?.time?.['24h'] || '00:00';
+			const people = doc.people().out('array');
+			const places = doc.places().out('array');
+			const detectedData = {
+				date,
+				time,
+				people,
+				places
+			};
+			let aiResponse = 'Failed to add event';
+			if (!date) {
+				inputValue = currentInput;
+				toast.error('No date detected');
+				return;
+			}
 			messages.push({
 				...userMessageData.message[0],
 				createdAt: new Date(userMessageData.message[0].createdAt)
 			});
 
-			// Compromise NLP Integration
-			const doc = nlp(currentInput);
-			// @ts-expect-error
-			const dates = doc.dates().format('MM/DD/YYYY').out('array');
-			// @ts-expect-error
-			const times = doc.times().out('array');
-			const people = doc.people().out('array');
-			const places = doc.places().out('array');
-			console.log(dates, times, people, places);
-			let aiResponse = 'Placeholder AI response.';
-
-			if (dates.length > 0 || times.length > 0 || people.length > 0 || places.length > 0) {
+			if (date || time || people.length > 0 || places.length > 0) {
 				let detectedInfo = [];
-				if (dates.length > 0) {
-					detectedInfo.push('Dates: ' + dates.join(', '));
+				if (date) {
+					detectedInfo.push(
+						'Date: ' +
+							new Date(date).toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'numeric',
+								day: 'numeric'
+							})
+					);
 				}
-				if (times.length > 0) {
-					detectedInfo.push('Times: ' + times.join(', '));
+				if (time) {
+					detectedInfo.push('Time: ' + time);
 				}
 				if (people.length > 0) {
 					detectedInfo.push('People: ' + people.join(', '));
@@ -99,10 +105,19 @@
 				if (places.length > 0) {
 					detectedInfo.push('Places: ' + places.join(', '));
 				}
-
-				aiResponse = `I detected: ${detectedInfo.join(', ')}.`;
 			}
-
+			const isScheduled = await handleScheduleEvent(detectedData);
+			if (isScheduled) {
+				const scheduledMessage = `Event scheduled for ${new Date(
+					detectedData.date
+				).toLocaleDateString('en-US', {
+					year: 'numeric',
+					month: 'short',
+					day: 'numeric'
+				})}${detectedData.time ? ` at ${convertTo12HourFormat(detectedData.time)}` : ''}${detectedData.people ? ` with ${detectedData.people.join(', ')}` : ''}${detectedData.places ? ` at ${detectedData.places.join(', ')}` : ''}.`;
+				aiResponse = scheduledMessage;
+				toast.success(scheduledMessage);
+			}
 			const aiMessage: NewMessage = {
 				content: aiResponse,
 				role: 'ai',
@@ -119,12 +134,14 @@
 			});
 
 			if (!aiMessageResponse.ok) {
-				throw new Error('Failed to save AI message');
+				toast.error('Failed to save AI message');
+				return;
 			}
 
 			const aiMessageData = await aiMessageResponse.json();
 			if (!aiMessageData.success) {
-				throw new Error(aiMessageData.error || 'Failed to save AI message');
+				toast.error(aiMessageData.error || 'Failed to save AI message');
+				return;
 			}
 
 			messages.push({
@@ -138,37 +155,32 @@
 			failedMessage = currentInput;
 		} finally {
 			isTyping = false;
+			isDisabled = false;
 		}
 	}
 
-	async function handleScheduleEvent() {
+	async function handleScheduleEvent(detectedData: DetectedData) {
 		try {
-			const response = await fetch('/api/calendar/events', {
+			const response = await fetch('/api/calendar', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ text: inputValue })
+				body: JSON.stringify(detectedData)
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to schedule event');
+				toast.error('Failed to schedule event');
+				return false;
 			}
 
 			const eventData = await response.json();
 			if (!eventData.success) {
-				throw new Error(eventData.error || 'Failed to schedule event');
+				toast.error(eventData.error || 'Failed to schedule event');
+				return false;
 			}
 
-			const confirmationMessage = `Your event has been scheduled for ${eventData.event.start.dateTime} with ${eventData.event.attendees[0].email} at ${eventData.event.location}.`;
-			messages.push({
-				id: crypto.randomUUID(),
-				chatId: messages[0]?.chatId || 'default',
-				content: confirmationMessage,
-				role: 'ai',
-				createdAt: new Date(),
-				userId: page.data.user?.id
-			});
+			return true;
 		} catch (error) {
 			console.error('Error scheduling event:', error);
 			toast.error('Failed to schedule event. Please try again.');
@@ -177,8 +189,10 @@
 
 	function handleKeyDown(e: KeyboardEvent) {
 		if (e.key === 'Enter' && !e.shiftKey) {
-			e.preventDefault();
-			handleSendMessage();
+			if (inputValue.trim() && !isDisabled) {
+				e.preventDefault();
+				handleSendMessage();
+			}
 		}
 	}
 </script>
@@ -189,8 +203,8 @@
 	<MessageInput
 		bind:inputValue
 		bind:isRecording
+		bind:isDisabled
 		{handleSendMessage}
 		{handleKeyDown}
-		{handleScheduleEvent}
 	/>
 </div>

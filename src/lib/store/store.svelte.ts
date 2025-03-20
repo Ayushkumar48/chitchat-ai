@@ -1,11 +1,5 @@
-// import type { User } from '$lib/server/db/schema';
-
-// export const user = $state<{ current: User | null }>({ current: null });
-
-// export function setUser(userData: User) {
-// 	user.current = userData;
-// }
-
-// export function removeUser() {
-// 	user.current = null;
-// }
+export const chatsDates = $state<{ current: Date[] }>({ current: [] });
+export const allEventsDates = $state<{ current: Date[] }>({ current: [] });
+export const todaysEventsDates = $state<{ current: Date[] }>({ current: [] });
+export const upcomingEventsDates = $state<{ current: Date[] }>({ current: [] });
+export const pastEventsDates = $state<{ current: Date[] }>({ current: [] });

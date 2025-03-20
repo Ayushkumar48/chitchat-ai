@@ -55,6 +55,25 @@ export const chats = pgTable('chats', {
 		.$defaultFn(() => new Date())
 });
 
+export const events = pgTable('events', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => sql`gen_random_uuid()`),
+	userId: text('userId')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	date: timestamp('date', { mode: 'date' }).notNull(),
+	createdAt: timestamp('createdAt', { mode: 'date' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	people: text('people'),
+	time: text('time'),
+	places: text('places'),
+	messageId: text('messageId')
+		.notNull()
+		.references(() => messages.id, { onDelete: 'cascade' })
+});
+
 export const googleAccounts = pgTable('google_accounts', {
 	id: text('id')
 		.primaryKey()
@@ -83,3 +102,6 @@ export type NewChat = typeof chats.$inferInsert;
 
 export type GoogleAccount = typeof googleAccounts.$inferSelect;
 export type NewGoogleAccount = typeof googleAccounts.$inferInsert;
+
+export type Event = typeof events.$inferSelect;
+export type NewEvent = typeof events.$inferInsert;

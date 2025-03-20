@@ -15,3 +15,10 @@ export interface ChatActions {
 	handleKeyDown: (e: KeyboardEvent) => void;
 	toggleRecording: () => void;
 }
+
+export interface DetectedData {
+	date: string;
+	time?: string;
+	people?: string[];
+	places?: string[];
+}
