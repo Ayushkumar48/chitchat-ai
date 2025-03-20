@@ -96,7 +96,7 @@
 					</p>
 
 					<div class="flex justify-center mt-8">
-						<Button size="lg" onclick={() => goto('/chat')}>Try the Full Experience</Button>
+						<Button size="lg" onclick={() => goto('/chat/today')}>Try the Full Experience</Button>
 					</div>
 				</CardContent>
 			</Card>

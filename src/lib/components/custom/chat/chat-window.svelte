@@ -7,6 +7,7 @@
 	import nlp from 'compromise';
 	import datePlugin from 'compromise-dates';
 	import { convertTo12HourFormat } from '$lib';
+	import { allEventsDates, upcomingEventsDates } from '$lib/store/store.svelte';
 	nlp.plugin(datePlugin);
 
 	let messages = $state<Message[]>(
@@ -117,6 +118,22 @@
 				})}${detectedData.time ? ` at ${convertTo12HourFormat(detectedData.time)}` : ''}${detectedData.people ? ` with ${detectedData.people.join(', ')}` : ''}${detectedData.places ? ` at ${detectedData.places.join(', ')}` : ''}.`;
 				aiResponse = scheduledMessage;
 				toast.success(scheduledMessage);
+				const newEventRes = await fetch('/api/event', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						date: new Date(detectedData.date),
+						userId: page.data.user?.id,
+						messageId: userMessageData.message[0].id,
+						time: detectedData.time,
+						people: detectedData.people.join(', '),
+						places: detectedData.places.join(', ')
+					})
+				});
+				const newEvent = await newEventRes.json();
+				allEventsDates.current.push(newEvent.date);
 			}
 			const aiMessage: NewMessage = {
 				content: aiResponse,
@@ -168,7 +185,6 @@
 				},
 				body: JSON.stringify(detectedData)
 			});
-
 			if (!response.ok) {
 				toast.error('Failed to schedule event');
 				return false;

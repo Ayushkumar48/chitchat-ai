@@ -16,7 +16,7 @@
 		onUpdated({ form }) {
 			if (form.message.status === 'success') {
 				toast.success(form.message.text);
-				goto('/chat');
+				goto('/chat/today');
 			} else {
 				toast.error(form.message.text);
 			}

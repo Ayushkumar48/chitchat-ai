@@ -6,7 +6,12 @@ import { google } from '$lib/server/db';
 export async function GET(event: RequestEvent): Promise<Response> {
 	const state = generateState();
 	const codeVerifier = generateCodeVerifier();
-	const url = google.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email']);
+	const url = google.createAuthorizationURL(state, codeVerifier, [
+		'openid',
+		'profile',
+		'email',
+		'https://www.googleapis.com/auth/calendar.events'
+	]);
 	url.searchParams.set('access_type', 'offline');
 	url.searchParams.set('prompt', 'consent');
 

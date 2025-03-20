@@ -1,10 +1,14 @@
 import { db } from './db';
 import { chats, events, messages, type NewEvent, type NewMessage } from './db/schema';
-import { desc, eq, and, sql, between, gte, lt } from 'drizzle-orm';
+import { desc, eq, and, sql, between, gte, lt, asc } from 'drizzle-orm';
 
 export async function getMessages(chatId: string) {
 	try {
-		const allMessages = await db.select().from(messages).where(eq(messages.chatId, chatId));
+		const allMessages = await db
+			.select()
+			.from(messages)
+			.where(eq(messages.chatId, chatId))
+			.orderBy(asc(messages.createdAt));
 		return allMessages;
 	} catch (error) {
 		console.error(error);
@@ -50,6 +54,7 @@ export async function getChatsDates(userId: string) {
 	try {
 		const allChats = await db
 			.select({
+				id: chats.id,
 				date: chats.createdAt
 			})
 			.from(chats)
@@ -127,7 +132,10 @@ export async function getChatByDate(userId: string, date: Date) {
 
 export async function addEvent(event: NewEvent) {
 	try {
-		const newEvent = await db.insert(events).values(event).returning();
+		const newEvent = await db
+			.insert(events)
+			.values({ ...event, date: new Date(event.date) })
+			.returning();
 		return newEvent;
 	} catch (error) {
 		console.error(error);
@@ -148,7 +156,7 @@ export async function getAllEvents(userId: string) {
 export async function getAllEventsDates(userId: string) {
 	try {
 		const allEventsDates = await db
-			.select({ date: events.date })
+			.select({ id: events.id, date: events.date })
 			.from(events)
 			.where(eq(events.userId, userId));
 		return allEventsDates;
@@ -180,7 +188,7 @@ export async function getTodaysEventsDates(userId: string) {
 		const startOfDay = new Date(today.setHours(0, 0, 0, 0));
 		const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 		const todaysEvents = await db
-			.select({ date: events.date })
+			.select({ id: events.id, date: events.date })
 			.from(events)
 			.where(and(eq(events.userId, userId), between(events.date, startOfDay, endOfDay)));
 		return todaysEvents;
@@ -205,7 +213,7 @@ export async function getUpcomingEvents(userId: string) {
 export async function getUpcomingEventsDates(userId: string) {
 	try {
 		const upcomingEvents = await db
-			.select({ date: events.date })
+			.select({ id: events.id, date: events.date })
 			.from(events)
 			.where(and(eq(events.userId, userId), gte(events.date, new Date())));
 		return upcomingEvents;
@@ -230,7 +238,7 @@ export async function pastEvents(userId: string) {
 export async function getPastEventsDates(userId: string) {
 	try {
 		const pastEvents = await db
-			.select({ date: events.date })
+			.select({ id: events.id, date: events.date })
 			.from(events)
 			.where(and(eq(events.userId, userId), lt(events.date, new Date())));
 		return pastEvents;

@@ -5,7 +5,6 @@ import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
 import { encodeBase32LowerCase } from '@oslojs/encoding';
-import { googleAccounts } from '$lib/server/db/schema';
 
 type GoogleUser = {
 	googleId: string;
@@ -139,7 +138,7 @@ export async function createGoogleAccount(
 	scope: string
 ) {
 	await db
-		.insert(googleAccounts)
+		.insert(table.googleAccounts)
 		.values({
 			userId,
 			accessToken,
@@ -148,7 +147,7 @@ export async function createGoogleAccount(
 			scope
 		})
 		.onConflictDoUpdate({
-			target: googleAccounts.userId,
+			target: table.googleAccounts.userId,
 			set: {
 				accessToken,
 				refreshToken,
@@ -159,7 +158,10 @@ export async function createGoogleAccount(
 }
 
 export async function getGoogleAccount(userId: string) {
-	const [account] = await db.select().from(googleAccounts).where(eq(googleAccounts.userId, userId));
+	const [account] = await db
+		.select()
+		.from(table.googleAccounts)
+		.where(eq(table.googleAccounts.userId, userId));
 
 	return account;
 }

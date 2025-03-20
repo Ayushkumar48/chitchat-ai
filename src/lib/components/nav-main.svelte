@@ -22,70 +22,51 @@
 			url: '#',
 			icon: BotMessageSquare,
 			isActive: true,
-			items: chatsDates.current.map((chat) => ({
-				title: new Date(chat).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				}),
-				url: `/chat/${chat}`
-			}))
+			items: chatsDates.current
+			// items: chatsDates.current.map((chat) => ({
+			// 	title: new Date(chat.date).toLocaleDateString('en-US', {
+			// 		year: 'numeric',
+			// 		month: 'short',
+			// 		day: 'numeric'
+			// 	}),
+			// 	url: `/chat/${chat.date}`
+			// }))
 		},
 		{
 			title: "Today's Events",
 			url: '#',
 			icon: Calendar1,
 			isActive: false,
-			items: todaysEventsDates.current.map((event) => ({
-				title: new Date(event).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				}),
-				url: `/events/${event}`
-			}))
+			items: todaysEventsDates.current
+			// items: todaysEventsDates.current.map((event) => ({
+			// 	title: new Date(event).toLocaleDateString('en-US', {
+			// 		year: 'numeric',
+			// 		month: 'short',
+			// 		day: 'numeric'
+			// 	}),
+			// 	url: `/events/${event}`
+			// }))
 		},
 		{
 			title: 'Upcoming Events',
 			url: '#',
 			icon: CalendarArrowUp,
 			isActive: false,
-			items: upcomingEventsDates.current.map((event) => ({
-				title: new Date(event).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				}),
-				url: `/events/${event}`
-			}))
+			items: upcomingEventsDates.current
 		},
 		{
 			title: 'Past Events',
 			url: '#',
 			icon: CalendarArrowDown,
 			isActive: false,
-			items: pastEventsDates.current.map((event) => ({
-				title: new Date(event).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				}),
-				url: `/events/${event}`
-			}))
+			items: pastEventsDates.current
 		},
 		{
 			title: 'All Events',
 			url: '#',
 			icon: Calendar,
 			isActive: false,
-			items: allEventsDates.current.map((event) => ({
-				title: new Date(event).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				}),
-				url: `/events/${event}`
-			}))
+			items: allEventsDates.current
 		}
 	]);
 </script>
@@ -116,12 +97,20 @@
 						<Collapsible.Content>
 							{#if mainItem?.items?.length > 0}
 								<Sidebar.MenuSub>
-									{#each mainItem.items as subItem (subItem.title)}
+									{#each mainItem.items as subItem (subItem.id)}
+										{@const itemDate = new Date(subItem.date).toLocaleDateString('en-US', {
+											year: 'numeric',
+											month: 'short',
+											day: 'numeric'
+										})}
 										<Sidebar.MenuSubItem>
 											<Sidebar.MenuSubButton>
 												{#snippet child({ props })}
-													<a href={subItem.url} {...props}>
-														<span>{subItem.title}</span>
+													<a
+														href={`/${mainItem.title === 'Chats' ? 'chat' : 'event'}/${subItem.date}`}
+														{...props}
+													>
+														<span>{itemDate}</span>
 													</a>
 												{/snippet}
 											</Sidebar.MenuSubButton>

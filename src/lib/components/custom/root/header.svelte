@@ -30,7 +30,7 @@
 
 		{#if page?.data?.user}
 			<div class="flex items-center space-x-4">
-				<Button size="sm" class="hidden md:flex" href="/chat">Chats</Button>
+				<Button size="sm" class="hidden md:flex" href="/chat/today">Chats</Button>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Avatar.Root class="h-8 w-8 rounded-lg">

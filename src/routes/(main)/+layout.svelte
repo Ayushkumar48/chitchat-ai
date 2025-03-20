@@ -14,15 +14,11 @@
 	import { page } from '$app/state';
 	let { children } = $props();
 	onMount(() => {
-		chatsDates.current = page.data.chatsDates.map((chat: { date: Date }) => chat.date);
-		allEventsDates.current = page.data.allEventsDates.map((event: { date: Date }) => event.date);
-		todaysEventsDates.current = page.data.todaysEventsDates.map(
-			(event: { date: Date }) => event.date
-		);
-		upcomingEventsDates.current = page.data.upcomingEventsDates.map(
-			(event: { date: Date }) => event.date
-		);
-		pastEventsDates.current = page.data.pastEventsDates.map((event: { date: Date }) => event.date);
+		chatsDates.current = page.data.chatsDates;
+		allEventsDates.current = page.data.allEventsDates;
+		todaysEventsDates.current = page.data.todaysEventsDates;
+		upcomingEventsDates.current = page.data.upcomingEventsDates;
+		pastEventsDates.current = page.data.pastEventsDates;
 	});
 </script>
 

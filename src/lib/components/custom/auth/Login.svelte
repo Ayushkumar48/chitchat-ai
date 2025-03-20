@@ -20,7 +20,7 @@
 			isLoading = false;
 			if (result.type === 'success' && result.data?.status === 200) {
 				toast.success(result.data.message);
-				goto('/chat');
+				goto('/chat/today');
 			} else {
 				toast.error(result.data?.message || 'An error occurred');
 				await applyAction(result);
