@@ -29,7 +29,11 @@
 				<div
 					class="relative h-[350px] w-[350px] md:h-[400px] md:w-[400px] lg:h-[500px] lg:w-[500px]"
 				>
-					<img src={Image2} alt="AI Assistant" class="object-contain" />
+					<img
+						src={Image2}
+						alt="AI Assistant"
+						class="object-contain ring-[0.1px] ring-gray-200 rounded-lg"
+					/>
 				</div>
 			</div>
 		</div>
