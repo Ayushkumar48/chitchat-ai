@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Image2 from '$lib/assets/2.png';
 	import { Button } from '$lib/components/ui/button';
 	import { MicIcon } from '@lucide/svelte';
 </script>
@@ -28,11 +29,7 @@
 				<div
 					class="relative h-[350px] w-[350px] md:h-[400px] md:w-[400px] lg:h-[500px] lg:w-[500px]"
 				>
-					<img
-						src="/placeholder.svg?height=500&width=500"
-						alt="AI Assistant"
-						class="object-contain"
-					/>
+					<img src={Image2} alt="AI Assistant" class="object-contain" />
 				</div>
 			</div>
 		</div>
